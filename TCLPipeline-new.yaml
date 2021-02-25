@@ -1,0 +1,37 @@
+pipeline:
+  agent:
+    kubernetes:
+      yaml: |
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - command:
+            - cat
+            image: golang
+            name: golang
+            tty: true
+  environment:
+    ENV1: VAL1
+    ENV2: VAL2
+  options:
+    - "timeout(time: 1, unit: 'HOURS')"
+    - skipDefaultCheckout()
+  stages:
+    - stage: checkout
+      steps:
+        - Init()
+        - gitClone()
+    - stage: Go Build      
+      container: golang
+      steps:
+        - sh "GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o main"
+    - stage: Docker Build
+      steps:
+        - dockerBuild()
+    - stage: Docker Push
+      steps:
+        - dockerPush()
+    - stage:  Deploy
+      steps:
+        - deployToClusters()
